@@ -4,6 +4,7 @@
 node_modules
 lambda/.env
 .env
+dist
 
 # CDK asset staging directory
 .cdk.staging
