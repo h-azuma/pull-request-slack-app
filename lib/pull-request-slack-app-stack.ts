@@ -1,16 +1,31 @@
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
+import 'dotenv/config';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 export class PullRequestSlackAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
+    const botLambda = new lambda.Function(this, 'BotLambda', {
+      functionName: 'pull-request-bot-lambda',
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'app.lambdaHandler',
+      code: lambda.Code.fromAsset('./dist/lambda'),
+    });
 
-    // example resource
-    // const queue = new sqs.Queue(this, 'PullRequestSlackAppQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
+    const pullRequestRule = new events.Rule(this, 'PullRequestRule', {
+      ruleName: 'pull-request-rule',
+      eventPattern: {
+        source: ['aws.codecommit'],
+        detailType: ['CodeCommit Pull Request State Change'],
+        resources: [
+          `arn:aws:codecommit:${process.env.REGION}:${process.env.ACCOUNT_ID}:${process.env.REPOSITORY_NAME}`,
+        ],
+      },
+    });
+    pullRequestRule.addTarget(new targets.LambdaFunction(botLambda));
   }
 }
