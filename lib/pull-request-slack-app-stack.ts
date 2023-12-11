@@ -14,6 +14,10 @@ export class PullRequestSlackAppStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'app.lambdaHandler',
       code: lambda.Code.fromAsset('./dist/lambda'),
+      environment: {
+        SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN!,
+        SLACK_SIGNING_TOKEN: process.env.SLACK_SIGNING_TOKEN!
+      }
     });
 
     const pullRequestRule = new events.Rule(this, 'PullRequestRule', {
@@ -22,9 +26,9 @@ export class PullRequestSlackAppStack extends cdk.Stack {
         source: ['aws.codecommit'],
         detailType: ['CodeCommit Pull Request State Change'],
         resources: [
-          `arn:aws:codecommit:${process.env.REGION}:${process.env.ACCOUNT_ID}:${process.env.REPOSITORY_NAME}`,
-        ],
-      },
+          `arn:aws:codecommit:${process.env.REGION}:${process.env.ACCOUNT_ID}:${process.env.REPOSITORY_NAME}`
+        ]
+      }
     });
     pullRequestRule.addTarget(new targets.LambdaFunction(botLambda));
   }
